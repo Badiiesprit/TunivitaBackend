@@ -89,7 +89,7 @@ app.use(passport.session());
 app.use("/", indexRouter);
 app.use("/category", filesUploads , categoryRouter);
 app.use("/center", filesUploads , centerRouter);
-app.use("/user", userRouter);
+app.use("/user",filesUploads, userRouter);
 app.use("/services", filesUploads,serviceRouter);
 app.use("/offers", filesUploads,offerRouter);
 app.use("/login", loginRouter);

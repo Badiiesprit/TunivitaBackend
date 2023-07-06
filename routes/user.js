@@ -4,6 +4,7 @@ const validateUser = require("../middlewares/validateUser");
 const validateToken = require("../middlewares/validateToken");
 const bcrypt = require('bcrypt');
 const user = require("../models/user");
+const uploadAndSaveImage = require("../middlewares/uploadAndSaveImage");
 
 var router = express.Router();
 
@@ -16,7 +17,7 @@ router.get("/",validateToken, function (req, res, next) {
 
 router.get("/get", validateToken ,async (req, res, next) => {
   try {
-      const users = await userModel.find();
+      const users = await userModel.find().populate('image');
       res.json(users);
       console.log("retuning data");
   } catch (error) {
@@ -28,7 +29,7 @@ router.get("/get", validateToken ,async (req, res, next) => {
 router.get("/get/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
-    const user = await userModel.findById(id);
+    const user = await userModel.findById(id).populate('image');
     // Get path of Images
     res.json({ result: user });
   } catch (error) {
@@ -37,28 +38,66 @@ router.get("/get/:id", async (req, res, next) => {
 });
 
 
-router.put("/update/:id", validateToken, async (req, res, next) => {
+// router.put("/update/:id", validateToken,uploadAndSaveImage, async (req, res, next) => {
+//   try {
+//     const { id } = req.params;
+//     const updatedUser = req.body;
+//     if(updatedUser.password == "")
+//     {
+//       delete updatedUser.password;
+//     }
+//     const user = await userModel.findByIdAndUpdate(id, updatedUser, { new: true });
+
+//     if (!user) {
+//       throw new Error("User not found");
+//     }
+
+//     res.json(user);
+//   } catch (error) {
+//     res.status(400).json({ error: error.message });
+//   }
+// });
+
+router.post("/update/:id",validateToken,uploadAndSaveImage, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const updatedUser = req.body;
-    if(updatedUser.password == "")
-    {
-      delete updatedUser.password;
+    const { firstname, lastname ,date_birth, gender , address , state , city , zip_code , phone, email, password, role} =req.body;
+    console.log(req.body);
+    var user = await userModel.findById(id);
+    if(user.email!=email){
+      const checkIfUserExist = await userModel.find({ email });
+      if (!isEmptyObject(checkIfUserExist)) {
+        throw new Error("user already exist!");
+      }
     }
-    const user = await userModel.findByIdAndUpdate(id, updatedUser, { new: true });
-
-    if (!user) {
-      throw new Error("User not found");
+    const userdata = new userModel({
+      firstname: firstname,
+      lastname: lastname,
+      date_birth:date_birth,
+      gender: gender,
+      address: address,
+      state: state,
+      city: city,
+      zip_code: zip_code,
+      phone: phone,
+      email: email,
+      image: (req.body.imageIds[0]?req.body.imageIds[0]:null)
+    });
+    console.log(userdata);
+    await userModel.findByIdAndUpdate(id, userdata );
+    if (!(user.role.includes("admin"))) {
+      await userModel.findByIdAndUpdate(id,{role:["user"]});
     }
-
+    
+    user = await userModel.findById(id);
+    console.log(user);
     res.json(user);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.json(error.message);
   }
 });
 
-
-router.post("/addUser",validateUser, async (req, res, next) => {
+router.post("/addUser",validateUser, uploadAndSaveImage , async (req, res, next) => {
     
   try {
     const { firstname, lastname ,date_birth, gender , address , state , city , zip_code , phone, email, password, role} =req.body;
@@ -81,8 +120,8 @@ router.post("/addUser",validateUser, async (req, res, next) => {
       phone: phone,
       email: email,
       password: hashedPassword,
+      image: (req.body.imageIds[0]?req.body.imageIds[0]:null)
     });
-    
     user.save();
     res.json("User Added");
   } catch (error) {
@@ -120,30 +159,7 @@ router.delete("/delete/:id",validateToken, async (req, res, next) => {
   });
   
 
-  router.post("/update/:id",validateToken, async (req, res, next) => {
-    try {
-      const { id } = req.params;
-      const { email } = req.body;
-      console.log(req.body);
-      var user = await userModel.findById(id);
-      if(user.email!=email){
-        const checkIfUserExist = await userModel.find({ email });
-        if (!isEmptyObject(checkIfUserExist)) {
-          throw new Error("user already exist!");
-        }
-      }
-      await userModel.findByIdAndUpdate(id, req.body);
-      if (!(user.role.includes("admin"))) {
-        await userModel.findByIdAndUpdate(id,{role:["user"]});
-      }
-      
-      user = await userModel.findById(id);
-      console.log(user);
-      res.json(user);
-    } catch (error) {
-      res.json(error.message);
-    }
-  });
+
 
   router.get("/statistics",validateToken, async (req, res, next) => {
     try {
