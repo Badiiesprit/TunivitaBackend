@@ -6,7 +6,6 @@ const validate = async(req, res, next) => {
 
         name: yup.string().required(),
         description: yup.string().required().min(20).max(255),
-        location:yup.string().required(),
 
     });
     await schema.validate(req.body);

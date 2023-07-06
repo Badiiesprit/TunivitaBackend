@@ -35,8 +35,6 @@ router.post("/add",validate,validateToken,uploadAndSaveImage, async (req, res, n
       serviceData.image = req.body.imageIds[0];
     }
     const service = new serviceModel(serviceData);
-
-
     service._id = new mongoose.Types.ObjectId();
     const savedService = await service.save();
     res.json({ result: savedService });
@@ -51,7 +49,7 @@ router.post("/add",validate,validateToken,uploadAndSaveImage, async (req, res, n
 router.get("/get/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
-    const service = await serviceModel.findById(id);
+    const service = await serviceModel.findById(id).populate('image');
     res.json(service);
   } catch (error) {
     res.json(error.message);
@@ -74,6 +72,43 @@ router.get("/delete/:id", async (req, res, next) => {
     res.json("service deleted");
   } catch (error) {
     res.json(error.message);
+  }
+});
+
+router.post("/add",validate,validateToken,uploadAndSaveImage, async (req, res, next) => {
+  try {
+    const { name, description, phone, email, location,date } = req.body;
+
+    const checkIfServiecExist = await serviceModel.findOne({ name });
+    if (checkIfServiecExist) {
+      throw new Error("Service already exist!");
+    }
+    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+    const qrCodeDataUrl = await generateQRCode(googleMapsUrl);
+
+    const serviceData ={
+      name,
+      description,
+      location,
+      phone,
+      email,
+      date,
+      qrCode:qrCodeDataUrl,
+
+    };
+
+    if (req.body.imageIds) {
+      serviceData.image = req.body.imageIds[0];
+    }
+    const service = new serviceModel(serviceData);
+    service._id = new mongoose.Types.ObjectId();
+    const savedService = await service.save();
+    res.json({ result: savedService });
+    
+  } catch (error) {
+    // res.json(error.message);
+    console.log(error.message);
+
   }
 });
 
@@ -100,7 +135,8 @@ router.post("/update/:id",validateToken,validate,uploadAndSaveImage, async (req,
     if (req.body.imageIds) {
       serviceData.image = req.body.imageIds[0];
     }
-    await serviceModel.findByIdAndUpdate(id,serviceData);
+    const service = new serviceModel(serviceData);
+    await serviceModel.findByIdAndUpdate(id,service);
     const serviceView = await serviceModel.findById(id);
     res.json({ serviceView });
   } catch (error) {

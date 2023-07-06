@@ -49,7 +49,7 @@ router.post("/add",validateToken,validate,uploadAndSaveImage, async (req, res, n
 router.get("/get/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
-    const offer = await offerModel.findById(id);
+    const offer = await offerModel.findById(id).populate('image').populate('center');;
     res.json(offer);
   } catch (error) {
     res.json(error.message);
@@ -61,7 +61,7 @@ router.get("/get/:id", async (req, res, next) => {
 
 router.get("/", async (req, res, next) => {
   try {
-    const offers = await offerModel.find();
+    const offers = await offerModel.find().populate('image').populate('center');
     res.json({ offers });
   } catch (error) {
     res.json(error.message);
@@ -248,11 +248,72 @@ router.get("/enable-disable/:id", async (req, res) => {
 
 
 
-const mixpanel = require('mixpanel');
-const mixpanelClient = mixpanel.init('92ef7d9216b1f454fc03c733a9da5459');
-router.get("/statistics", async (req, res) => {
-  try {
+// const mixpanel = require('mixpanel');
+// const mixpanelClient = mixpanel.init('92ef7d9216b1f454fc03c733a9da5459');
+// router.get("/statistics", async (req, res) => {
+//   try {
     
+//     const currentDate = new Date();
+//     const currentYear = currentDate.getFullYear();
+//     const currentMonth = currentDate.getMonth() + 1;
+//     const currentDay = currentDate.getDate();
+//     console.log(currentDate, currentYear, currentMonth, currentDay);
+
+//     const statistics = await offerModel.aggregate([
+//       {
+//         $match: {
+//           createdAt: {
+//             $gte: new Date(`${currentYear}-${currentMonth}-01`),
+//             $lte: new Date(`${currentYear}-${currentMonth}-${currentDay}`)
+//           }
+//         }
+//       },
+//       {
+//         $group: {
+//           _id: "$disable",
+//           count: { $sum: 1 }
+//         }
+//       }
+//     ]);
+
+//     const enabledOffers = statistics.find(stat => stat._id === false);
+//     const disabledOffers = statistics.find(stat => stat._id === true);
+
+//     const enabledCount = enabledOffers ? enabledOffers.count : 0;
+//     const disabledCount = disabledOffers ? disabledOffers.count : 0;
+
+//     const totalOffers = enabledCount + disabledCount;
+//     const percentageEnabledOffers = ((enabledCount / totalOffers) * 100).toFixed(2) + '%';
+//     const percentageDisabledOffers = ((disabledCount / totalOffers) * 100).toFixed(2) + '%';
+
+  
+//     mixpanelClient.track('Offer Statistics', {
+//       PercentageEnabledOffers: percentageEnabledOffers,
+//       PercentageDisabledOffers: percentageDisabledOffers,
+//       enqbleOffers:enabledCount,
+//       disableOffers:disabledCount,
+//       totalOffers:totalOffers
+//     });
+
+//     const result = {
+//       PercentageEnabledOffers: percentageEnabledOffers,
+//       PercentageDisabledOffers: percentageDisabledOffers,
+//       enqbleOffers:enabledCount,
+//       disableOffers:disabledCount,
+//       totalOffers:totalOffers
+//     };
+
+//     res.json(result);
+//   } catch (error) {
+//     res.json({ error: error.message });
+//   }
+// });
+
+
+
+
+router.get("/statistics", async (req, res) => {
+  try {  
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth() + 1;
@@ -264,7 +325,7 @@ router.get("/statistics", async (req, res) => {
         $match: {
           createdAt: {
             $gte: new Date(`${currentYear}-${currentMonth}-01`),
-            $lte: new Date(`${currentYear}-${currentMonth}-${currentDay}`)
+            $lte: new Date(`${currentYear}-${currentMonth}-${currentDay+1}`)
           }
         }
       },
@@ -275,6 +336,14 @@ router.get("/statistics", async (req, res) => {
         }
       }
     ]);
+    console.log('Current Date:', currentDate);
+console.log('Match Stage:', {
+  createdAt: {
+    $gte: new Date(`${currentYear}-${currentMonth}-01`),
+    $lte: new Date(`${currentYear}-${currentMonth}-${currentDay}`)
+  }
+});
+    console.log(statistics);
 
     const enabledOffers = statistics.find(stat => stat._id === false);
     const disabledOffers = statistics.find(stat => stat._id === true);
@@ -285,15 +354,7 @@ router.get("/statistics", async (req, res) => {
     const totalOffers = enabledCount + disabledCount;
     const percentageEnabledOffers = ((enabledCount / totalOffers) * 100).toFixed(2) + '%';
     const percentageDisabledOffers = ((disabledCount / totalOffers) * 100).toFixed(2) + '%';
-
   
-    mixpanelClient.track('Offer Statistics', {
-      PercentageEnabledOffers: percentageEnabledOffers,
-      PercentageDisabledOffers: percentageDisabledOffers,
-      enqbleOffers:enabledCount,
-      disableOffers:disabledCount,
-      totalOffers:totalOffers
-    });
 
     const result = {
       PercentageEnabledOffers: percentageEnabledOffers,
@@ -302,8 +363,8 @@ router.get("/statistics", async (req, res) => {
       disableOffers:disabledCount,
       totalOffers:totalOffers
     };
-
     res.json(result);
+  
   } catch (error) {
     res.json({ error: error.message });
   }
@@ -332,6 +393,8 @@ router.get('/offers-by-center', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+
 
 
 
