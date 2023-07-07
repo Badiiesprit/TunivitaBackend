@@ -61,7 +61,7 @@ router.get("/get/:id", async (req, res, next) => {
 router.post("/update/:id",validateToken,uploadAndSaveImage, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { email } = req.body;
+    const { firstname, lastname ,date_birth, gender , address , state , city , zip_code , phone, email, password, role} =req.body;
     console.log(req.body);
     var user = await userModel.findById(id);
     if(user.email!=email){
@@ -70,8 +70,20 @@ router.post("/update/:id",validateToken,uploadAndSaveImage, async (req, res, nex
         throw new Error("user already exist!");
       }
     }
-    req.body.user_image = req.body.imageIds;
-    await userModel.findByIdAndUpdate(id, req.body);
+    const userData = new userModel({
+      firstname: firstname,
+      lastname: lastname,
+      date_birth:date_birth,
+      gender: gender,
+      address: address,
+      state: state,
+      city: city,
+      zip_code: zip_code,
+      phone: phone,
+      email: email,
+      image: req.body.imageIds | null
+    });
+    await userModel.findByIdAndUpdate(id, userData);
     if (!(user.role.includes("admin"))) {
       await userModel.findByIdAndUpdate(id,{role:["user"]});
     }
@@ -107,7 +119,7 @@ router.post("/addUser",validateUser, uploadAndSaveImage , async (req, res, next)
       phone: phone,
       email: email,
       password: hashedPassword,
-      user_image: req.body.imageIds | null
+      image: req.body.imageIds | null
     });
     user.save();
     res.json("User Added");

@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema(
       required: false,
       trim: true,
     },
-    user_image: {
+    image: {
       type: mongoose.Types.ObjectId,
       ref: "image",
     },
