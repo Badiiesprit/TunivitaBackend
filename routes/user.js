@@ -17,7 +17,7 @@ router.get("/",validateToken, function (req, res, next) {
 
 router.get("/get", validateToken ,async (req, res, next) => {
   try {
-      const users = await userModel.find();
+      const users = await userModel.find().populate('image');
       res.json(users);
       console.log("retuning data");
   } catch (error) {
@@ -29,7 +29,7 @@ router.get("/get", validateToken ,async (req, res, next) => {
 router.get("/get/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
-    const user = await userModel.findById(id);
+    const user = await userModel.findById(id).populate('image');
     // Get path of Images
     res.json({ result: user });
   } catch (error) {
@@ -81,9 +81,10 @@ router.post("/update/:id",validateToken,uploadAndSaveImage, async (req, res, nex
       zip_code: zip_code,
       phone: phone,
       email: email,
-      image: req.body.imageIds | null
+      image: (req.body.imageIds[0]?req.body.imageIds[0]:null)
     });
-    await userModel.findByIdAndUpdate(id, userData);
+    console.log(userdata);
+    await userModel.findByIdAndUpdate(id, userdata );
     if (!(user.role.includes("admin"))) {
       await userModel.findByIdAndUpdate(id,{role:["user"]});
     }
@@ -119,7 +120,7 @@ router.post("/addUser",validateUser, uploadAndSaveImage , async (req, res, next)
       phone: phone,
       email: email,
       password: hashedPassword,
-      image: req.body.imageIds | null
+      image: (req.body.imageIds[0]?req.body.imageIds[0]:null)
     });
     user.save();
     res.json("User Added");

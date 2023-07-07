@@ -9,7 +9,7 @@ const validateToken = async (req, res, next) => {
 
   if (authHeader) {
     const [bearerKeyword, token] = authHeader.split(' ');
-    if (bearerKeyword === 'Bearer' && token) {
+    if (bearerKeyword === 'Bearer' && token!="") {
       try {
         await yup.string().required().validate(token); // Valider le format du token
 

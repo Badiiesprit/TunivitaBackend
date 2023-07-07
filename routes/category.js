@@ -209,8 +209,11 @@ router.get("/search", async (req, res, next) => {
 router.get("/getbyparent/:parent", async (req, res, next) => {
   try {
     const { parent } = req.params;
-    if(parent == "null") parent = null;
-    const categorys = await categoryModel.find({ parent }).populate('image').populate('parent');
+    if(parent == "parent"){
+      const categorys = await categoryModel.find().populate('image').populate('parent');
+    }else{
+      const categorys = await categoryModel.find({ parent }).populate('image').populate('parent');
+    }
     res.json({ size: categorys.length, result: categorys });
   } catch (error) {
     res.json({ error: error.message });

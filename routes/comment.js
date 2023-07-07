@@ -7,20 +7,20 @@ var router = express.Router();
 
 router.post("/add",async (req, res, next) => {
     try {
-      const { Postid } = req.params;
+      const { Postid,text } = req.body;
       const userId = req.body.currentUser;
+      
       var user = await userModel.findById(userId);
 
-      const {text} = req.body;
       var post = await postModel.findById(Postid);
-      if (!post_comment) {
+      if (!post) {
         throw new Error("post does not exist!");
       }
         
       const comment = new commentModel({
         text: text,
         post: post,
-        user:user,
+        user: user,
       });
 
       comment.save();
@@ -71,6 +71,18 @@ router.get("/get", async (req, res, next) => {
     res.json(comments);
   } catch (error) {
     res.json(error.message);
+  }
+});
+
+
+router.get('/comments-by-post/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const comments = await commentModel.find({ post: postId }).populate('post').populate('user');
+
+    res.json(comments);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
