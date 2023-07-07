@@ -8,7 +8,7 @@ const bcrypt = require('bcrypt');
 router.post("/", async (req, res, next) => {
     const { password, email } = req.body;
     try {
-      const user = await userModel.findOne({ email });
+      const user = await userModel.findOne({ email }).populate("image");
       if (!user) {
         return res.status(400).json({ error: "l'email n'existe pas!" });
       }
@@ -17,6 +17,7 @@ router.post("/", async (req, res, next) => {
         const payload = {
           userId: user._id,
           role: user.role, 
+          data: user, 
         };
         const options = {
           expiresIn: '999999h', 

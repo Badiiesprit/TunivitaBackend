@@ -62,7 +62,7 @@ router.post("/update/:id",validateToken,uploadAndSaveImage, async (req, res, nex
   try {
     const { id } = req.params;
     const { firstname, lastname ,date_birth, gender , address , state , city , zip_code , phone, email, password, role} =req.body;
-    console.log(req.body);
+    //console.log(req.body);
     var user = await userModel.findById(id);
     if(user.email!=email){
       const checkIfUserExist = await userModel.find({ email });
@@ -83,13 +83,17 @@ router.post("/update/:id",validateToken,uploadAndSaveImage, async (req, res, nex
       email: email,
       image: (req.body.imageIds[0]?req.body.imageIds[0]:null)
     });
-    console.log(userdata);
-    await userModel.findByIdAndUpdate(id, userdata );
+    console.log("userData");
+    console.log(userData);
+    let u = await userModel.findByIdAndUpdate(id, userData );
+    console.log("userData User:");
+    console.log(u);
     if (!(user.role.includes("admin"))) {
       await userModel.findByIdAndUpdate(id,{role:["user"]});
     }
     
     user = await userModel.findById(id);
+    console.log("user");
     console.log(user);
     res.json(user);
   } catch (error) {
