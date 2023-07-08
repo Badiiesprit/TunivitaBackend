@@ -60,7 +60,7 @@ router.post("/add", validateToken , validate , uploadAndSaveImage , async (req, 
           ejs.renderFile(path.join(__dirname, 'modele_mails', 'maile_add_centers.ejs'), { 
             username: user.firstname , 
             centrename: categoryData.title ,
-            centreurl: "http://localhost:4200/center/"+center._id
+            centreurl: "http://localhost:4200/centers/show/"+center._id
           }, async(err, data) => {
             if (err) {
               console.log(err);
@@ -371,39 +371,56 @@ router.get("/page", async (req, res, next) => {
 
 
 
-router.get("/getbydistance/:distance", async (req, res, next) => {
+router.get("/getbydistance/:distance/:latitude/:longitude", async (req, res, next) => {
   try {
-    const { distance } = req.params;
+    const { distance,latitude,longitude } = req.params;
     const centers = await centerModel.find({disable:false}).populate('image').populate('category');
     let distance_centers =[];
     if(centers){
-      const address ='Avenue Mustapha Hjeij, 131 47 km) 1002, Ariana 1002 , TN';
-      await opencage
-      .geocode({ q: address })
-      .then((data) => {
-        if (data.status.code === 200 && data.results.length > 0) {
-          const place = data.results[0];
-          console.log(place.geometry);
-          centers.forEach( async (center) => {
-            const distance = geolib.getDistance(
-              { latitude:place.geometry.lat, longitude: place.geometry.lng },
-              { latitude: center.altitude, longitude: center.longitude }
-            );
-            console.log({"distance":distance});
-            distance_centers.push({distance,center});
-         });
-        } else {
-          console.log('status', data.status.message);
-          console.log('total_results', data.total_results);
+      centers.forEach( async (center) => {
+        const d = geolib.getDistance(
+          { latitude:latitude, longitude: longitude },
+          { latitude: center.altitude, longitude: center.longitude }
+        );
+        console.log({"distance":d});
+        if(distance >= d){
+          distance_centers.push({distance:d,center});
         }
-      });
-      
+     });
     }
     res.json({ result: distance_centers });
   } catch (error) {
     throw new Error(error.message);
   }
 });
+
+router.post("/sundmail" , async (req, res, next) => {
+  try {
+    const {subject , messager , id} = req.body;
+    const center = await centerModel.findById(id).populate('image').populate('category');
+    ejs.renderFile(path.join(__dirname, 'modele_mails', 'maile_centers.ejs'), { 
+      subject: subject , 
+      messager: messager ,
+      centreurl: "http://localhost:4200/centers/show/"+center._id
+    }, async(err, data) => {
+      if (err) {
+        console.log(err);
+      } else {
+        sundMails(
+          center.email,
+          subject,
+          data
+        );
+      }
+    }); 
+    
+    res.json({ result: center });
+  } catch (error) {
+    res.json({error : error.message});
+  }
+}
+);
+
 
 const sundMails = async (email , subject , html ) => {
   try {
