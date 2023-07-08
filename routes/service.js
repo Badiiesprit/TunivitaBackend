@@ -321,6 +321,33 @@ router.post("/statistics", async (req, res) => {
   }
 });
 
+router.get("/gettopvus/:limit", async (req, res, next) => {
+  try {
+    const { limit } = req.params;
+    const services = await serviceModel.aggregate([
+      {
+        $sort: {
+          "clickStatistics.count": -1
+        }
+      },
+      {
+        $limit: parseInt(limit)
+      },
+      {
+        $lookup: {
+          from: "images",
+          localField: "image",
+          foreignField: "_id",
+          as: "image"
+        }
+      }
+    ]);
+    res.json({ size: services.length, result: services });
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
 
 router.get("/enable-disable/:id", async (req, res) => {
   const serviceId = req.params.id;

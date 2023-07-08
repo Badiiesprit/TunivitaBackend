@@ -53,7 +53,7 @@ router.get("/delete/:id", async (req, res, next) => {
 router.get("/get/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
-    const post = await postModel.findById(id);
+    const post = await postModel.findById(id).populate('image');
     res.json(post);
   } catch (error) {
     res.json(error.message);
@@ -90,7 +90,7 @@ router.post("/update/:id",uploadAndSaveImage,async (req, res, next) => {
 
 router.get("/get", async (req, res, next) => {
   try {
-    const posts = await postModel.find();
+    const posts = await postModel.find().populate('image');
     res.json(posts);
   } catch (error) {
     res.json(error.message);
@@ -193,9 +193,6 @@ router.get("/page", async (req, res, next) => {
     res.json({ error: error.message });
   }
 });
-
-
-
 
 
 router.post("/searchFilters", async (req, res, next) => {

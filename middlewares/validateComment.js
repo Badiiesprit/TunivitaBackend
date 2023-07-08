@@ -5,7 +5,6 @@ const validate = async(req, res, next) => {
     const schema = yup.object().shape({
 
         text: yup.string().required(),
-        post: yup.string().required(),
     });
     await schema.validate(req.body);
     next();

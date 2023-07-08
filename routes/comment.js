@@ -45,7 +45,7 @@ router.get("/delete/:id", async (req, res, next) => {
 router.get("/get/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
-    const comment = await commentModel.findById(id);
+    const comment = await commentModel.findById(id).populate('user').populate('post');
     res.json(comment);
   } catch (error) {
     res.json(error.message);
