@@ -283,7 +283,7 @@ router.post("/click/:id", async (req, res, next) => {
 
 
 
-router.get("/statistics", async (req, res) => {
+router.post("/statistics", async (req, res) => {
   try {
     const { startDate, endDate } = req.body;
 
@@ -311,7 +311,7 @@ router.get("/statistics", async (req, res) => {
         }
       },
       {
-        $limit: 2
+        $limit: 3
       }
     ]);
 
@@ -338,6 +338,39 @@ router.get("/enable-disable/:id", async (req, res) => {
     res.json({ error: error.message });
   }
 });
+
+
+
+
+router.post('/rate/:id', validateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.body.currentUser;
+    const { rating } = req.body;
+    const service = await serviceModel.findById(id);
+
+    const userIndex = service.ratedBy.findIndex((ratedUser) => ratedUser.userId.toString() === userId);
+
+    if (userIndex > -1) {
+      service.ratedBy[userIndex].rating = rating;
+    } else {
+      service.ratedBy.push({ userId, rating });
+    }
+
+    const totalRatings = service.ratedBy.length;
+    const sum = service.ratedBy.reduce((total, ratedUser) => total + ratedUser.rating, 0);
+    const averageRating = sum / totalRatings;
+
+    service.averageRating = averageRating;
+    console.log(averageRating);
+    await service.save();
+
+    res.json({ message: 'Rating added/updated successfully.', averageRating,ratedBy:service.ratedBy });
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
 
 
 

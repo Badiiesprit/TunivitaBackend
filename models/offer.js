@@ -44,8 +44,13 @@ const offerSchema = new mongoose.Schema({
     averageRating:{
         type: Number,
         default: 0,
-    }
-
+    },
+    favorites: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+      ],
 },{
     timestamps: true
 });

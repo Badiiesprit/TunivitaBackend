@@ -246,69 +246,22 @@ router.get("/enable-disable/:id", async (req, res) => {
   }
 });
 
-
-
-// const mixpanel = require('mixpanel');
-// const mixpanelClient = mixpanel.init('92ef7d9216b1f454fc03c733a9da5459');
-// router.get("/statistics", async (req, res) => {
-//   try {
-    
-//     const currentDate = new Date();
-//     const currentYear = currentDate.getFullYear();
-//     const currentMonth = currentDate.getMonth() + 1;
-//     const currentDay = currentDate.getDate();
-//     console.log(currentDate, currentYear, currentMonth, currentDay);
-
-//     const statistics = await offerModel.aggregate([
-//       {
-//         $match: {
-//           createdAt: {
-//             $gte: new Date(`${currentYear}-${currentMonth}-01`),
-//             $lte: new Date(`${currentYear}-${currentMonth}-${currentDay}`)
-//           }
-//         }
-//       },
-//       {
-//         $group: {
-//           _id: "$disable",
-//           count: { $sum: 1 }
-//         }
-//       }
-//     ]);
-
-//     const enabledOffers = statistics.find(stat => stat._id === false);
-//     const disabledOffers = statistics.find(stat => stat._id === true);
-
-//     const enabledCount = enabledOffers ? enabledOffers.count : 0;
-//     const disabledCount = disabledOffers ? disabledOffers.count : 0;
-
-//     const totalOffers = enabledCount + disabledCount;
-//     const percentageEnabledOffers = ((enabledCount / totalOffers) * 100).toFixed(2) + '%';
-//     const percentageDisabledOffers = ((disabledCount / totalOffers) * 100).toFixed(2) + '%';
-
+router.get("/isFavorite/:id", async (req, res) => {
+  const offerId = req.params.id;
   
-//     mixpanelClient.track('Offer Statistics', {
-//       PercentageEnabledOffers: percentageEnabledOffers,
-//       PercentageDisabledOffers: percentageDisabledOffers,
-//       enqbleOffers:enabledCount,
-//       disableOffers:disabledCount,
-//       totalOffers:totalOffers
-//     });
-
-//     const result = {
-//       PercentageEnabledOffers: percentageEnabledOffers,
-//       PercentageDisabledOffers: percentageDisabledOffers,
-//       enqbleOffers:enabledCount,
-//       disableOffers:disabledCount,
-//       totalOffers:totalOffers
-//     };
-
-//     res.json(result);
-//   } catch (error) {
-//     res.json({ error: error.message });
-//   }
-// });
-
+  try {
+    const offer = await offerModel.findById(offerId);
+    if (offer) {
+      offer.isFavorite = !offer.isFavorite;
+      await offer.save();
+      res.json({ isFavorite:offer.isFavorite });
+    } else {
+      res.json({ error: "Offer not found" });
+    }
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
 
 
 
@@ -345,16 +298,16 @@ console.log('Match Stage:', {
 });
     console.log(statistics);
 
-    const enabledOffers = statistics.find(stat => stat._id === false);
-    const disabledOffers = statistics.find(stat => stat._id === true);
+    const disabledOffers = statistics.find(stat => stat._id === false);
+    const enabledOffers = statistics.find(stat => stat._id === true);
 
     const enabledCount = enabledOffers ? enabledOffers.count : 0;
     const disabledCount = disabledOffers ? disabledOffers.count : 0;
 
     const totalOffers = enabledCount + disabledCount;
-    const percentageEnabledOffers = ((enabledCount / totalOffers) * 100).toFixed(2) + '%';
-    const percentageDisabledOffers = ((disabledCount / totalOffers) * 100).toFixed(2) + '%';
-  
+    const percentageEnabledOffers = ((enabledCount / totalOffers) * 100).toFixed(2);
+    const percentageDisabledOffers = ((disabledCount / totalOffers) * 100).toFixed(2);
+    console.log(percentageDisabledOffers);
 
     const result = {
       PercentageEnabledOffers: percentageEnabledOffers,
@@ -369,32 +322,6 @@ console.log('Match Stage:', {
     res.json({ error: error.message });
   }
 });
-
-
-router.get('/offers-by-center', async (req, res) => {
-  try {
-      const offers = await offerModel.find();
-      offers.forEach((offer) => {
-        mixpanelClient.track('Offer Viewed',
-         { 
-          offerId: offer._id, 
-          centerId: offer.center, 
-          clickCount:offer.clickCount,
-          createdAt:offer.createdAt,
-          disable:offer.disable
-          
-        });
-        console.log(offer.center);
-        console.log(offer.disable);
-      });
-   
-      res.json("done");
-    } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
 
 
 
@@ -425,6 +352,47 @@ router.post('/rate/:id', validateToken, async (req, res) => {
     res.json({ error: error.message });
   }
 });
+
+
+
+
+router.post('/favorite/:id', validateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.body.currentUser;
+    const offer = await offerModel.findById(id);
+
+    if (!offer.favorites) {
+      offer.favorites = []; // Initialize favorites array if it doesn't exist
+    }
+
+    const userIndex = offer.favorites.indexOf(userId);
+
+    if (userIndex > -1) {
+      offer.favorites.splice(userIndex, 1); // Remove user ID from favorites
+    } else {
+      offer.favorites.push(userId); // Add user ID to favorites
+    }
+
+    await offer.save();
+
+    res.json({ message: 'Favorite status updated successfully.', favorites: offer.favorites });
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
+router.get('/offers-by-center/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const offers = await offerModel.find({ center: id }).populate('center').populate('image');
+    res.json(offers);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 
 
 

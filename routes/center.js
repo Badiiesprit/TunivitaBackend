@@ -371,33 +371,22 @@ router.get("/page", async (req, res, next) => {
 
 
 
-router.get("/getbydistance/:distance", async (req, res, next) => {
+router.get("/getbydistance/:distance/:latitude/:longitude", async (req, res, next) => {
   try {
-    const { distance } = req.params;
+    const { distance,latitude,longitude } = req.params;
     const centers = await centerModel.find({disable:false}).populate('image').populate('category');
     let distance_centers =[];
     if(centers){
-      const address ='Avenue Mustapha Hjeij, 131 47 km) 1002, Ariana 1002 , TN';
-      await opencage
-      .geocode({ q: address })
-      .then((data) => {
-        if (data.status.code === 200 && data.results.length > 0) {
-          const place = data.results[0];
-          console.log(place.geometry);
-          centers.forEach( async (center) => {
-            const distance = geolib.getDistance(
-              { latitude:place.geometry.lat, longitude: place.geometry.lng },
-              { latitude: center.altitude, longitude: center.longitude }
-            );
-            console.log({"distance":distance});
-            distance_centers.push({distance,center});
-         });
-        } else {
-          console.log('status', data.status.message);
-          console.log('total_results', data.total_results);
+      centers.forEach( async (center) => {
+        const d = geolib.getDistance(
+          { latitude:latitude, longitude: longitude },
+          { latitude: center.altitude, longitude: center.longitude }
+        );
+        console.log({"distance":d});
+        if(distance >= d){
+          distance_centers.push({distance:d,center});
         }
-      });
-      
+     });
     }
     res.json({ result: distance_centers });
   } catch (error) {
