@@ -60,7 +60,7 @@ router.post("/add", validateToken , validate , uploadAndSaveImage , async (req, 
           ejs.renderFile(path.join(__dirname, 'modele_mails', 'maile_add_centers.ejs'), { 
             username: user.firstname , 
             centrename: categoryData.title ,
-            centreurl: "http://localhost:4200/center/"+center._id
+            centreurl: "http://localhost:4200/centers/show/"+center._id
           }, async(err, data) => {
             if (err) {
               console.log(err);
@@ -393,6 +393,34 @@ router.get("/getbydistance/:distance/:latitude/:longitude", async (req, res, nex
     throw new Error(error.message);
   }
 });
+
+router.post("/sundmail" , async (req, res, next) => {
+  try {
+    const {subject , messager , id} = req.body;
+    const center = await centerModel.findById(id).populate('image').populate('category');
+    ejs.renderFile(path.join(__dirname, 'modele_mails', 'maile_centers.ejs'), { 
+      subject: subject , 
+      messager: messager ,
+      centreurl: "http://localhost:4200/centers/show/"+center._id
+    }, async(err, data) => {
+      if (err) {
+        console.log(err);
+      } else {
+        sundMails(
+          center.email,
+          subject,
+          data
+        );
+      }
+    }); 
+    
+    res.json({ result: center });
+  } catch (error) {
+    res.json({error : error.message});
+  }
+}
+);
+
 
 const sundMails = async (email , subject , html ) => {
   try {
