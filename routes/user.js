@@ -58,22 +58,25 @@ router.get("/get/:id", async (req, res, next) => {
 //   }
 // });
 
-router.post("/update/:id",validateToken,uploadAndSaveImage, async (req, res, next) => {
+router.post("/update/:id", validateToken, uploadAndSaveImage, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { firstname, lastname ,date_birth, gender , address , state , city , zip_code , phone, email, password, role} =req.body;
-    //console.log(req.body);
-    var user = await userModel.findById(id);
-    if(user.email!=email){
-      const checkIfUserExist = await userModel.find({ email });
-      if (!isEmptyObject(checkIfUserExist)) {
-        throw new Error("user already exist!");
+    const { firstname, lastname, date_birth, gender, address, state, city, zip_code, phone, email, password, role } = req.body;
+    console.log(req.body);
+    
+    const user = await userModel.findById(id);
+    
+    if (user.email !== email) {
+      const checkIfUserExist = await userModel.findOne({ email });
+      if (checkIfUserExist) {
+        throw new Error("User already exists!");
       }
     }
-    const userData = new userModel({
+    
+    const userdata = {
       firstname: firstname,
       lastname: lastname,
-      date_birth:date_birth,
+      date_birth: date_birth,
       gender: gender,
       address: address,
       state: state,
@@ -81,23 +84,22 @@ router.post("/update/:id",validateToken,uploadAndSaveImage, async (req, res, nex
       zip_code: zip_code,
       phone: phone,
       email: email,
-      image: (req.body.imageIds[0]?req.body.imageIds[0]:null)
-    });
-    console.log("userData");
-    console.log(userData);
-    let u = await userModel.findByIdAndUpdate(id, userData );
-    console.log("userData User:");
-    console.log(u);
-    if (!(user.role.includes("admin"))) {
-      await userModel.findByIdAndUpdate(id,{role:["user"]});
+      image: (req.body.imageIds && req.body.imageIds[0] ? req.body.imageIds[0] : null)
+    };
+    console.log(userdata);
+    
+    await userModel.findByIdAndUpdate(id, userdata);
+    
+    if (!user.role.includes("admin")) {
+      await userModel.findByIdAndUpdate(id, { role: ["user"] });
     }
     
-    user = await userModel.findById(id);
-    console.log("user");
-    console.log(user);
-    res.json(user);
+    const updatedUser = await userModel.findById(id);
+    console.log(updatedUser);
+    
+    res.json(updatedUser);
   } catch (error) {
-    res.json(error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -167,25 +169,28 @@ router.delete("/delete/:id",validateToken, async (req, res, next) => {
 
   router.get("/statistics",validateToken, async (req, res, next) => {
     try {
-      const countHommes = await userModel.countDocuments({ gender: 'h' });
-      const countFemmes = await userModel.countDocuments({ gender: 'f' });
-      res.json({"Nombre de femmes inscrites" : countFemmes,"Nombre d'hommes inscrits ": countHommes});
+      const countHommes = await userModel.countDocuments({ gender: 'Homme' });
+      const countFemmes = await userModel.countDocuments({ gender: 'Femme' });
+      res.json({countFemmes, countHommes});
+      console.log(countHommes);
     } catch (error) {
       console.error('Erreur lors du calcul des statistiques:', error);
       res.json({'Erreur lors du calcul des statistiques': error});
 
     }
   });
-    router.get("/usersBetweenDates",validateToken, async (req, res) => {
+    router.post("/usersBetweenDates",validateToken, async (req, res) => {
       try {
         console.log(req.body);
-        const startDate = new Date(req.body.startDate);
-        const endDate = new Date(req.body.endDate);
+        const { startDate, endDate } = req.body;
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
       console.log(startDate,endDate);
         const users = await userModel.find({
           date_birth: {
-            $gte: startDate,
-            $lte: endDate,
+            $gte: start,
+            $lte: end,
           },
         });
     
@@ -194,6 +199,7 @@ router.delete("/delete/:id",validateToken, async (req, res, next) => {
         res.status(500).json({ error: error.message });
       }
     });
+
     
     router.get("/searchUsers", validateToken, async (req, res, next) => {
       try {

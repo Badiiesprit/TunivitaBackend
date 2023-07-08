@@ -14,6 +14,8 @@ router.post("/", async (req, res, next) => {
       }
       const passwordMatch = await bcrypt.compare(password, user.password);
       if (passwordMatch) {
+        user.password ="";
+        user.token="";
         const payload = {
           userId: user._id,
           role: user.role, 
