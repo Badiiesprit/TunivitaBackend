@@ -11,7 +11,6 @@ router.post("/add",async (req, res, next) => {
       const userId = req.body.currentUser;
       
       var user = await userModel.findById(userId);
-
       var post = await postModel.findById(Postid);
       if (!post) {
         throw new Error("post does not exist!");
@@ -67,7 +66,7 @@ router.post("/update/:id", async (req, res, next) => {
 });
 router.get("/get", async (req, res, next) => {
   try {
-    const comments = await commentModel.find();
+    const comments = await commentModel.find().populate('user').populate('post');
     res.json(comments);
   } catch (error) {
     res.json(error.message);
@@ -75,9 +74,9 @@ router.get("/get", async (req, res, next) => {
 });
 
 
-router.get('/comments-by-post/:postId', async (req, res) => {
+router.get('/comments-by-post/:id', async (req, res) => {
   try {
-    const { postId } = req.params;
+    const { postId } = req.body;
     const comments = await commentModel.find({ post: postId }).populate('post').populate('user');
 
     res.json(comments);

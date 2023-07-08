@@ -64,7 +64,23 @@ const serviceSchema = new mongoose.Schema({
             }
           ]
         }
-      ]
+      ],
+      ratedBy: [
+        {
+          userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+          },
+          rating: {
+            type: Number,
+            required: true,
+          },
+        },
+      ],
+    averageRating:{
+        type: Number,
+        default: 0,
+    }
    
 
 
