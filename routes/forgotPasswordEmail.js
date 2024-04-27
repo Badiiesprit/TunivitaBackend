@@ -12,8 +12,8 @@ const transporter = nodemailer.createTransport({
   secure: false, // true for 465, false for other ports
   auth: {
     // TODO: replace `user` and `pass` values from <https://forwardemail.net>
-    user: 'nassreddine.trigui@hotmail.com',
-    pass: 'Nass..1989',
+    user: '',
+    pass: '',
 }
 });
 
